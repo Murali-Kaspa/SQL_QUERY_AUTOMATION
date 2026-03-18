@@ -27,3 +27,11 @@ CREATE TABLE IF NOT EXISTS projects (
     start_date DATE,
     FOREIGN KEY (emp_id) REFERENCES employees(emp_id)
 );
+
+
+CREATE TABLE IF NOT EXISTS branches (
+    branch_id INT AUTO_INCREMENT PRIMARY KEY,
+    building_name VARCHAR(100),
+    block VARCHAR(10),
+    department VARCHAR(50)
+);
