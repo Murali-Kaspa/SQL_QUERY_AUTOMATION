@@ -23,7 +23,7 @@ VALUES
 ('HR Portal', 2, '2026-03-05');
 
 --INSERT Branches
-INSERT INTO branches (building-name, block, department)
+INSERT INTO branches (building_name, block, department)
 VALUES 
 ('DELL', 'C', 'CSE'),
 ('Arduino', 'A', 'ECE'),
