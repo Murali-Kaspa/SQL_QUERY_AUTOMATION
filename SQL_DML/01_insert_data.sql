@@ -21,3 +21,12 @@ INSERT INTO projects (project_name, emp_id, start_date)
 VALUES 
 ('DevOps Automation', 1, '2026-03-01'),
 ('HR Portal', 2, '2026-03-05');
+
+--INSERT Branches
+INSERT INTO branches (building-name, block, department)
+VALUES 
+('DELL', 'C', 'CSE'),
+('Arduino', 'A', 'ECE'),
+('Cement', 'C', 'CIVIL'),
+('Rod', 'E', 'Mech'),
+('Shock', 'B', 'EEE');
