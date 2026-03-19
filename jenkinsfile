@@ -106,3 +106,9 @@ pipeline {
         
     }
 }
+
+
+#If u want to exclude only those two directories then use:
+
+git diff --name-only --diff-filter=AMR HEAD~1 HEAD \
+| grep -Ev '^(SQL_DDL|SQL_DML)/'
