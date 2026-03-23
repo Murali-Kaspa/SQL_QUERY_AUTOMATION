@@ -1,6 +1,6 @@
 -- SQL_DDL/02_create_tables.sql
 
-USE company_db;
+USE Tesla;
 
 -- Employees Table
 CREATE TABLE IF NOT EXISTS employees (
