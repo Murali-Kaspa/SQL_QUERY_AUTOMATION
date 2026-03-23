@@ -1,3 +1,3 @@
 -- SQL_DDL/01_create_database.sql
 
-CREATE DATABASE IF NOT EXISTS Apple;
+CREATE DATABASE IF NOT EXISTS Samsung;
