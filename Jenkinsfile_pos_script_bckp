@@ -107,7 +107,7 @@ pipeline {
                         mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
                         -u $DB_USER -p$DB_PASS < "$file"
                         done
-                        ech "All SQL scripts executed successfully!"
+                        echo "All SQL scripts executed successfully!"
                         '''
                     }
                 }
@@ -143,9 +143,6 @@ pipeline {
                     '''
                 }
             }
-        }
-        success {
-            echo "Pipeline completed successfully!"
         }
     }
 }
