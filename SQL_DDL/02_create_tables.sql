@@ -4,7 +4,7 @@ USE Samsung;
 
 -- Employees Table
 CREATE TABLE IF NOT EXISTS employees (
-    emp_id INT AUTO_INCREMENT PRIMARY KEY,
+
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE,
     department VARCHAR(100),
@@ -34,4 +34,19 @@ CREATE TABLE IF NOT EXISTS branches (
     building_name VARCHAR(100),
     block VARCHAR(10),
     department VARCHAR(50)
+);
+-- SQL_DDL/04_create_attendance_table.sql
+
+USE Samsung;
+
+-- Attendance Table
+CREATE TABLE IF NOT EXISTS attendance (
+    attendance_id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_id INT NOT NULL,
+    attendance_date DATE NOT NULL,
+    status ENUM('Present', 'Absent', 'Leave') DEFAULT 'Present',
+    check_in TIME,
+    check_out TIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (emp_id) REFERENCES employees(emp_id)
 );
