@@ -26,6 +26,7 @@ pipeline {
             steps {
                 script{
                 sh '''
+                echo ${env.Branch_NAME}
                 set -x
                 cd Packing
                 mkdir -p Compressed_Folder
