@@ -17,7 +17,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                checkout scmGit(branches: [[name: '*/main']], extensions: [[$class: 'RelativeTargetDirectory', 
+                checkout scmGit(branches: [[name: "*/${env.BRANCH_NAME}"]], extensions: [[$class: 'RelativeTargetDirectory', 
                 relativeTargetDir: 'Packing']], userRemoteConfigs: [[credentialsId: 'Git-Creds', url: 'https://github.com/Murali-Kaspa/SQL_QUERY_AUTOMATION.git']])
             }
         }
