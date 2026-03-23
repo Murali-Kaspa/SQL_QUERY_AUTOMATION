@@ -35,3 +35,15 @@ CREATE TABLE IF NOT EXISTS branches (
     block VARCHAR(10),
     department VARCHAR(50)
 );
+
+-- Salaries Table
+CREATE TABLE IF NOT EXISTS salaries (
+    salary_id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_id INT NOT NULL,
+    base_salary DECIMAL(10,2),
+    bonus DECIMAL(10,2),
+    total_salary DECIMAL(10,2),
+    effective_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (emp_id) REFERENCES employees(emp_id)
+);

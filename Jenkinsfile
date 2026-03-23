@@ -98,13 +98,41 @@ pipeline {
                         done
                         echo "All SQL scripts executed successfully!"
                         '''
-            }
+                    }
+                 }
+             }
+        }
+        post {
+    failure {
+        echo "Pipeline failed! Starting rollback..."
+
+        dir('Packing') {
+            withCredentials([usernamePassword(
+                credentialsId: 'SQL-Creds',
+                usernameVariable: 'DB_USER',
+                passwordVariable: 'DB_PASS'
+            )]) {
+
+                sh '''
+                echo "Executing ROLLBACK scripts..."
+
+                if [ -d "Rollback" ]; then
+                    for file in $(find Rollback -type f -name "*.sql" | sort); do
+                        echo "Running Rollback: $file"
+                        mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
+                        -u $DB_USER -p$DB_PASS < "$file"
+                    done
+                else
+                    echo "No Rollback directory found!"
+                fi
+
+                echo "Rollback completed!"
+                '''
+             }
         }
     }
 }
-          
-        
-    }
+}
 }
 
 
