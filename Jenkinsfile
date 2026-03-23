@@ -1,0 +1,114 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Pipeline Start') {
+            steps {
+                echo 'Pipeline Started'
+            }
+        }
+
+        stage('WorkSpace Cleaning') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout Code') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [[$class: 'RelativeTargetDirectory', 
+                relativeTargetDir: 'Packing']], userRemoteConfigs: [[credentialsId: 'Git-Creds', url: 'https://github.com/Murali-Kaspa/SQL_QUERY_AUTOMATION.git']])
+            }
+        }
+
+        stage('Filtering the Commits') {
+            steps {
+                script{
+                sh '''
+                set -x
+                cd Packing
+                mkdir -p Compressed_Folder
+                git diff --name-only --diff-filter=AMR HEAD~1 HEAD -- SQL_DDL SQL_DML | while read file; do
+                cp --parents -r "$file" Compressed_Folder || true
+                done
+                ls Compressed_Folder
+                '''
+                }
+            }
+        }
+
+        stage("Zipping the File") {
+            steps {
+                dir('Packing') {
+                    sh 'tar -czvf Compressed_Folder_${BUILD_NUMBER}.tar.gz Compressed_Folder'
+                    sh 'rm -rf Compressed_Folder'
+                    
+                }     
+            }
+        }
+        stage("Testing SQL Connection") {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'SQL-Creds',
+                    usernameVariable: 'DB_USER',
+                    passwordVariable: 'DB_PASS'
+                    )]) {
+                    sh '''
+                    set +x
+                    mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
+                    -u $DB_USER -p$DB_PASS \
+                    -e "SELECT 1;"
+                    '''
+                }
+            }
+        }
+        stage("Unzip the files"){
+            steps{
+                dir('Packing'){
+                    sh'''
+                    echo "Extracting the package"
+                    tar -xzvf Compressed_Folder_${BUILD_NUMBER}.tar.gz
+                    echo "Listing the files"
+                    ls -R
+                    '''
+                }
+            }
+        }
+        stage("Execute SQL Scripts on RDS") {
+            steps {
+                dir('Packing') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'SQL-Creds',
+                        usernameVariable: 'DB_USER',
+                        passwordVariable: 'DB_PASS'
+                        )]) {
+                        sh '''
+                        for file in $(find Compressed_Folder/SQL_DDL -type f -name "*.sql" | sort); do
+                        echo "Running DDL: $file"
+                        mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
+                        -u $DB_USER -p$DB_PASS < "$file"
+                        done
+
+                        echo "Executing DML scripts..."
+                        for file in $(find Compressed_Folder/SQL_DML -type f -name "*.sql" | sort); do
+                        echo "Running DML: $file"
+                        mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
+                        -u $DB_USER -p$DB_PASS < "$file"
+                        done
+                        echo "All SQL scripts executed successfully!"
+                        '''
+            }
+        }
+    }
+}
+          
+        
+    }
+}
+
+
+//#If u want to exclude only those two directories then use:
+
+//git diff --name-only --diff-filter=AMR HEAD~1 HEAD \
+//| grep -Ev '^(SQL_DDL|SQL_DML)/'
