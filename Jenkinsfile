@@ -17,23 +17,32 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                checkout scmGit(branches: [[name: "*/${env.BRANCH_NAME}"]], extensions: [[$class: 'RelativeTargetDirectory', 
-                relativeTargetDir: 'Packing']], userRemoteConfigs: [[credentialsId: 'Git-Creds', url: 'https://github.com/Murali-Kaspa/SQL_QUERY_AUTOMATION.git']])
+                checkout scmGit(
+                    branches: [[name: "*/${env.BRANCH_NAME}"]],
+                    extensions: [[
+                        $class: 'RelativeTargetDirectory',
+                        relativeTargetDir: 'Packing'
+                    ]],
+                    userRemoteConfigs: [[
+                        credentialsId: 'Git-Creds',
+                        url: 'https://github.com/Murali-Kaspa/SQL_QUERY_AUTOMATION.git'
+                    ]]
+                )
             }
         }
 
         stage('Filtering the Commits') {
             steps {
-                script{
-                sh '''
-                set -x
-                cd Packing
-                mkdir -p Compressed_Folder
-                git diff --name-only --diff-filter=AMR HEAD~1 HEAD -- SQL_DDL SQL_DML | while read file; do
-                cp --parents -r "$file" Compressed_Folder || true
-                done
-                ls Compressed_Folder
-                '''
+                script {
+                    sh '''
+                    set -x
+                    cd Packing
+                    mkdir -p Compressed_Folder
+                    git diff --name-only --diff-filter=AMR HEAD~1 HEAD -- SQL_DDL SQL_DML | while read file; do
+                    cp --parents -r "$file" Compressed_Folder || true
+                    done
+                    ls Compressed_Folder
+                    '''
                 }
             }
         }
@@ -43,17 +52,17 @@ pipeline {
                 dir('Packing') {
                     sh 'tar -czvf Compressed_Folder_${BUILD_NUMBER}.tar.gz Compressed_Folder'
                     sh 'rm -rf Compressed_Folder'
-                    
-                }     
+                }
             }
         }
+
         stage("Testing SQL Connection") {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'SQL-Creds',
                     usernameVariable: 'DB_USER',
                     passwordVariable: 'DB_PASS'
-                    )]) {
+                )]) {
                     sh '''
                     set +x
                     mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
@@ -63,10 +72,11 @@ pipeline {
                 }
             }
         }
-        stage("Unzip the files"){
-            steps{
-                dir('Packing'){
-                    sh'''
+
+        stage("Unzip the files") {
+            steps {
+                dir('Packing') {
+                    sh '''
                     echo "Extracting the package"
                     tar -xzvf Compressed_Folder_${BUILD_NUMBER}.tar.gz
                     echo "Listing the files"
@@ -75,6 +85,7 @@ pipeline {
                 }
             }
         }
+
         stage("Execute SQL Scripts on RDS") {
             steps {
                 dir('Packing') {
@@ -82,7 +93,7 @@ pipeline {
                         credentialsId: 'SQL-Creds',
                         usernameVariable: 'DB_USER',
                         passwordVariable: 'DB_PASS'
-                        )]) {
+                    )]) {
                         sh '''
                         for file in $(find Compressed_Folder/SQL_DDL -type f -name "*.sql" | sort); do
                         echo "Running DDL: $file"
@@ -99,44 +110,39 @@ pipeline {
                         echo "All SQL scripts executed successfully!"
                         '''
                     }
-                 }
-             }
+                }
+            }
         }
-        post {
-    failure {
-        echo "Pipeline failed! Starting rollback..."
+    }
 
-        dir('Packing') {
-            withCredentials([usernamePassword(
-                credentialsId: 'SQL-Creds',
-                usernameVariable: 'DB_USER',
-                passwordVariable: 'DB_PASS'
-            )]) {
+    post {
+        failure {
+            echo "Pipeline failed! Starting rollback..."
 
-                sh '''
-                echo "Executing ROLLBACK scripts..."
+            dir('Packing') {
+                withCredentials([usernamePassword(
+                    credentialsId: 'SQL-Creds',
+                    usernameVariable: 'DB_USER',
+                    passwordVariable: 'DB_PASS'
+                )]) {
 
-                if [ -d "Rollback" ]; then
-                    for file in $(find Rollback -type f -name "*.sql" | sort); do
-                        echo "Running Rollback: $file"
-                        mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
-                        -u $DB_USER -p$DB_PASS < "$file"
-                    done
-                else
-                    echo "No Rollback directory found!"
-                fi
+                    sh '''
+                    echo "Executing ROLLBACK scripts..."
 
-                echo "Rollback completed!"
-                '''
-             }
+                    if [ -d "Rollback" ]; then
+                        for file in $(find Rollback -type f -name "*.sql" | sort); do
+                            echo "Running Rollback: $file"
+                            mysql -h bank.cbasse68y8w0.ap-south-1.rds.amazonaws.com \
+                            -u $DB_USER -p$DB_PASS < "$file"
+                        done
+                    else
+                        echo "No Rollback directory found!"
+                    fi
+
+                    echo "Rollback completed!"
+                    '''
+                }
+            }
         }
     }
 }
-}
-}
-
-
-//#If u want to exclude only those two directories then use:
-
-//git diff --name-only --diff-filter=AMR HEAD~1 HEAD \
-//| grep -Ev '^(SQL_DDL|SQL_DML)/'
